@@ -1,0 +1,28 @@
+# About Spring Boot
+/build/
+/target/
+.gradle/
+*.class
+*.jar
+*.war
+*.ear
+
+# About OS settings
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# About IDE Settings 
+
+# IntelliJ IDEA configuration files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# VS Code configuration files
+.vscode/
