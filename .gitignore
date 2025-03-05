@@ -6,6 +6,11 @@
 *.jar
 *.war
 *.ear
+HELP.md
+.gradle
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
 
 # About OS settings
 
@@ -18,11 +23,34 @@ desktop.ini
 
 # About IDE Settings 
 
-# IntelliJ IDEA configuration files
+# IntelliJ IDEA 
 .idea/
 *.iml
 *.ipr
 *.iws
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
 
-# VS Code configuration files
+
+# VS Code 
 .vscode/
+
+# STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
