@@ -6,4 +6,4 @@ The database is normalized to reduce redundancy and ensure data integrity, with 
 If you would like to leave a comment or suggestion, feel free to do so via the link below.
 
 
-📄 [View the Database Table Specification](https://docs.google.com/spreadsheets/d/1F9rpUXEZxIicI3c23Vide9FGbeQgUOO_/edit?usp=sharing&ouid=110149644358726266941&rtpof=true&sd=true)
+📄 [View the Database Table Specification](https://docs.google.com/spreadsheets/d/1hGOHctpNakvIuTzt-73WrgE83oRpaEGB/edit?usp=sharing&ouid=110149644358726266941&rtpof=true&sd=true)
