@@ -28,8 +28,8 @@ public class StockAnalysisService {
             JSONObject jsonObject = new JSONObject(jsonResponse);
             List<Double> weeklyPrices = aggregateWeeklyData(jsonObject);
 
-            // Fetch today's price
-            double todaysPrice = fetchTodaysPrice(symbol);
+            // Fetch today's price dynamically
+            double todaysPrice = fetchTodaysPrice(jsonObject);
 
             // Analyze trends and calculate decisions
             Map<String, Object> analysisResults = analyzeTrends(weeklyPrices, todaysPrice);
@@ -56,9 +56,11 @@ public class StockAnalysisService {
         return response.toString();
     }
 
-    private double fetchTodaysPrice(String stockSymbol) throws Exception {
-        // Simulate fetching today's price (replace with actual API call)
-        return 150.00; // Replace with real-time price fetching logic
+    private double fetchTodaysPrice(JSONObject jsonObject) {
+        // Extract the latest closing price from the JSON response
+        JSONObject timeSeries = jsonObject.getJSONObject("Time Series (Daily)");
+        String latestDate = timeSeries.keys().next(); // Get the most recent date
+        return timeSeries.getJSONObject(latestDate).getDouble("4. close");
     }
 
     private List<Double> aggregateWeeklyData(JSONObject jsonObject) {
@@ -124,10 +126,6 @@ public class StockAnalysisService {
         analysisResults.put("Max Price", maxPrice);
         analysisResults.put("Min Price", minPrice);
 
-        // Candlestick Pattern Analysis (Expanded)
-        String candlestickPattern = detectCandlestickPattern(weeklyPrices);
-        analysisResults.put("Candlestick Pattern", candlestickPattern);
-
         // Suggest Optimal Buy and Sell Prices
         double optimalBuyPrice = level38; // A conservative level for potential support
         double optimalSellPrice = level61; // A resistance level for profit-taking
@@ -145,24 +143,6 @@ public class StockAnalysisService {
         }
 
         return analysisResults;
-    }
-
-    private String detectCandlestickPattern(List<Double> prices) {
-        double latestPrice = prices.get(prices.size() - 1);
-        double previousPrice = prices.get(prices.size() - 2);
-
-        // Expanded patterns
-        if (latestPrice > previousPrice * 1.02 && previousPrice > prices.get(prices.size() - 3)) {
-            return "Bullish Engulfing: Indicates potential upward trend.";
-        } else if (latestPrice < previousPrice * 0.98 && previousPrice < prices.get(prices.size() - 3)) {
-            return "Bearish Engulfing: Indicates potential downward trend.";
-        } else if (latestPrice < previousPrice && latestPrice > prices.get(prices.size() - 3)) {
-            return "Hammer: Indicates potential reversal upward.";
-        } else if (latestPrice > previousPrice && latestPrice < prices.get(prices.size() - 3)) {
-            return "Shooting Star: Indicates potential reversal downward.";
-        } else {
-            return "Doji: Indicates market indecision.";
-        }
     }
 
     private double calculateSMA(List<Double> prices, int period) {
