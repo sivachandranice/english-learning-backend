@@ -38,7 +38,7 @@ public class StockService {
     }
 
     private String fetchStockData(String symbol) throws Exception {
-        String apiUrl = baseUrl + symbol + "&apikey=" + apiKey;
+        String apiUrl = baseUrl + symbol + "&outputsize=full&&apikey=" + apiKey;
         URL url = new URL(apiUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
