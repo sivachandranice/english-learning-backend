@@ -141,12 +141,14 @@ public class YahooFinanceService {
         double longTermSMA = calculateSMA(prices, 10);
         analysisResults.put("Short-Term SMA", shortTermSMA);
         analysisResults.put("Long-Term SMA", longTermSMA);
-        analysisResults.put("SMA Signal", shortTermSMA > longTermSMA ? "Buy Signal: Uptrend detected." : "Sell Signal: Downtrend detected.");
+        analysisResults.put("SMA Signal", shortTermSMA > longTermSMA ? "Buy Signal: Short-Term SMA is above Long-Term SMA."
+                : "Sell Signal: Short-Term SMA is below Long-Term SMA.");
 
         // Calculate RSI
         double rsi = calculateRSI(prices);
         analysisResults.put("RSI", rsi);
-        analysisResults.put("RSI Signal", rsi < 30 ? "Oversold: Price may increase." : rsi > 70 ? "Overbought: Price may decrease." : "Neutral.");
+        analysisResults.put("RSI Signal", rsi < 30 ? "Buy Signal: RSI indicates oversold conditions."
+                : rsi > 70 ? "Sell Signal: RSI indicates overbought conditions." : "Neutral: RSI is balanced.");
 
         // Calculate Fibonacci Levels
         double maxPrice = Collections.max(prices);
@@ -162,27 +164,54 @@ public class YahooFinanceService {
         analysisResults.put("Max Price", maxPrice);
         analysisResults.put("Min Price", minPrice);
 
-        // Volume Trends Analysis
-        long averageVolume = calculateAverageVolume(volumes);
-        analysisResults.put("Volume Analysis", latestVolume > averageVolume ? "High volume suggests strong trend." : "Low volume suggests weak trend.");
-
-        // Price Momentum
-        double momentum = calculateMomentum(prices);
-        analysisResults.put("Price Momentum", momentum > 0 ? "Uptrend: Price is accelerating." : "Downtrend: Price is decelerating.");
-
-        // Candlestick Pattern Analysis
+        // Candlestick Pattern
         double previousPrice = prices.get(prices.size() - 2);
-        analysisResults.put("Candlestick Pattern", latestPrice > previousPrice * 1.02 ? "Hammer detected: Uptrend likely." :
-                latestPrice < previousPrice * 0.98 ? "Shooting Star detected: Downtrend likely." : "Doji detected: Market indecision.");
+        analysisResults.put("Candlestick Pattern", latestPrice > previousPrice * 1.02 ? "Hammer: Indicates potential reversal upward."
+                : latestPrice < previousPrice * 0.98 ? "Shooting Star: Indicates potential reversal downward."
+                : "Doji: Indicates market indecision.");
+
+        // Optimal Buy/Sell Prices
+        analysisResults.put("Optimal Buy Price", minPrice * 1.05);
+        analysisResults.put("Optimal Sell Price", maxPrice * 0.95);
 
         // Current Price
         analysisResults.put("Current Price", latestPrice + " (" + latestDate + ")");
+
+        // Volume Analysis
+        long averageVolume = calculateAverageVolume(volumes);
+        analysisResults.put("Volume Analysis", latestVolume > averageVolume ? "High volume near support levels strengthens the buy signal."
+                : "Low volume near resistance levels weakens the sell signal.");
+
+        // Trend Information: Uptrend or Downtrend
+        String trend = identifyTrend(shortTermSMA, longTermSMA, rsi, latestPrice, previousPrice, latestVolume, averageVolume);
+        analysisResults.put("Trend Information", trend);
+
+        // Momentum Calculation
+        double momentum = calculateMomentum(prices);
+        analysisResults.put("Momentum", momentum > 0 ? "Positive Momentum: Price is accelerating upward."
+                : momentum < 0 ? "Negative Momentum: Price is decelerating downward." : "Neutral Momentum: Price is stable.");
+
+        // Decision Based on Current Price
+        analysisResults.put("Today Decision", latestPrice < minPrice * 1.05 ? "Advisable to buy."
+                : latestPrice > maxPrice * 0.95 ? "Not advisable to buy." : "Neutral: Current price is within acceptable range.");
 
         return analysisResults;
     }
 
     private double calculateMomentum(List<Double> prices) {
-        return prices.get(prices.size() - 1) - prices.get(prices.size() - 5); // Example: Rate of change over 5 days
+        // Rate of change over the last 5 days
+        if (prices.size() < 5) return 0; // Handle case where there are fewer than 5 prices
+        return prices.get(prices.size() - 1) - prices.get(prices.size() - 5);
+    }
+
+    private String identifyTrend(double shortTermSMA, double longTermSMA, double rsi, double latestPrice, double previousPrice, long latestVolume, long averageVolume) {
+        if (shortTermSMA > longTermSMA && rsi < 50 && latestVolume > averageVolume) {
+            return "Uptrend: Price is increasing steadily with strong volume.";
+        } else if (shortTermSMA < longTermSMA && rsi > 50 && latestVolume < averageVolume) {
+            return "Downtrend: Price is decreasing with weakening demand.";
+        } else {
+            return "Neutral: The trend is unclear; monitor further developments.";
+        }
     }
 
     private double calculateSMA(List<Double> prices, int period) {
@@ -210,5 +239,6 @@ public class YahooFinanceService {
     private long calculateAverageVolume(List<Long> volumes) {
         return volumes.stream().mapToLong(Long::longValue).sum() / volumes.size();
     }
+
 }
 
