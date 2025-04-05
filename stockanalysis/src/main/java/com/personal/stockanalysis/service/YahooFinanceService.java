@@ -28,7 +28,7 @@ public class YahooFinanceService {
             long latestVolume = volumes.get(volumes.size() - 1);
 
             // Perform analysis
-            return performAnalysis(closingPrices, volumes, latestPrice, latestVolume, latestDate);
+            return performAnalysis(closingPrices, volumes, latestPrice, latestVolume, latestDate, symbol);
 
         } catch (Exception e) {
             return Map.of("error", "Failed to fetch or analyze data: " + e.getMessage());
@@ -133,7 +133,7 @@ public class YahooFinanceService {
         }
     }
 
-    private Map<String, Object> performAnalysis(List<Double> prices, List<Long> volumes, double latestPrice, long latestVolume, String latestDate) {
+    private Map<String, Object> performAnalysis(List<Double> prices, List<Long> volumes, double latestPrice, long latestVolume, String latestDate, String symbol) {
         Map<String, Object> analysisResults = new HashMap<>();
 
         // Calculate Moving Averages
@@ -170,6 +170,16 @@ public class YahooFinanceService {
                 : latestPrice < previousPrice * 0.98 ? "Shooting Star: Indicates potential reversal downward."
                 : "Doji: Indicates market indecision.");
 
+        // Candlestick Pattern Detection
+        JSONObject stockData = fetchStockData(symbol);
+        List<Double> closingPrices = extractClosingPrices(stockData);
+        List<Double> highPrices = extractHighPrices(stockData);
+        List<Double> lowPrices = extractLowPrices(stockData);
+        List<Double> openPrices = extractOpenPrices(stockData);
+        String candlestickPattern = detectCandlestickPattern(openPrices, highPrices, lowPrices, closingPrices);
+        String candlestickSuggestion = getCandlestickSuggestion(candlestickPattern);
+        analysisResults.put("Candlestick Pattern Details", candlestickPattern + ": " + candlestickSuggestion);
+
         // Optimal Buy/Sell Prices
         analysisResults.put("Optimal Buy Price", minPrice * 1.05);
         analysisResults.put("Optimal Sell Price", maxPrice * 0.95);
@@ -191,12 +201,97 @@ public class YahooFinanceService {
         analysisResults.put("Momentum", momentum > 0 ? "Positive Momentum: Price is accelerating upward."
                 : momentum < 0 ? "Negative Momentum: Price is decelerating downward." : "Neutral Momentum: Price is stable.");
 
+        // Warren Buffett's Analysis
+        double intrinsicValue = calculateIntrinsicValue(5.0, 0.08, 0.1); // Example EPS = 5.0, Growth Rate = 8%, Discount Rate = 10%
+        boolean isUndervalued = latestPrice < intrinsicValue;
+        boolean hasEconomicMoat = evaluateEconomicMoat(0.15, 0.10); // Example ROE = 15%, ROA = 10%
+        analysisResults.put("Buffett Analysis", isUndervalued && hasEconomicMoat
+                ? "Aligned with Buffett's principles: Stock is undervalued with a strong economic moat."
+                : "Not aligned with Buffett's principles: Stock may lack value or competitive advantage.");
+
+        // Charlie Munger's Analysis
+        boolean withinCircleOfCompetence = evaluateCircleOfCompetence("Tech"); // Example industry = "Tech"
+        boolean avoidsMistakes = evaluateMistakes(0.3, 0.1); // Example Debt-to-Equity = 0.3, Cash Flow = Positive
+        analysisResults.put("Munger Analysis", withinCircleOfCompetence && avoidsMistakes
+                ? "Aligned with Munger's principles: Stock is within circle of competence and avoids common pitfalls."
+                : "Not aligned with Munger's principles: Stock may be outside circle of competence or risky.");
+
         // Decision Based on Current Price
         analysisResults.put("Today Decision", latestPrice < minPrice * 1.05 ? "Advisable to buy."
                 : latestPrice > maxPrice * 0.95 ? "Not advisable to buy." : "Neutral: Current price is within acceptable range.");
 
         return analysisResults;
     }
+
+    private String detectCandlestickPattern(List<Double> openPrices, List<Double> highPrices, List<Double> lowPrices, List<Double> closingPrices) {
+        // Logic to identify candlestick patterns
+        int lastIndex = closingPrices.size() - 1;
+        double open = openPrices.get(lastIndex);
+        double close = closingPrices.get(lastIndex);
+        double high = highPrices.get(lastIndex);
+        double low = lowPrices.get(lastIndex);
+
+        if (close > open && (high - close) < (close - low) * 0.2) {
+            return "Hammer";
+        } else if (open > close && (open - high) < (low - close) * 0.2) {
+            return "Shooting Star";
+        } else if (Math.abs(close - open) < (high - low) * 0.1) {
+            return "Doji";
+        } else if (open < close && close > highPrices.get(lastIndex - 1) && open < lowPrices.get(lastIndex - 1)) {
+            return "Bullish Engulfing";
+        } else if (open > close && close < lowPrices.get(lastIndex - 1) && open > highPrices.get(lastIndex - 1)) {
+            return "Bearish Engulfing";
+        } else {
+            return "No significant pattern detected.";
+        }
+    }
+
+    private String getCandlestickSuggestion(String pattern) {
+        switch (pattern) {
+            case "Hammer":
+                return "Potential upward reversal after a downtrend. Consider buying if confirmed by volume or other indicators.";
+            case "Shooting Star":
+                return "Potential downward reversal after an uptrend. Consider selling or avoiding new purchases.";
+            case "Doji":
+                return "Market indecision detected. Wait for confirmation of the next trend direction before acting.";
+            case "Bullish Engulfing":
+                return "Strong buying pressure detected. Consider entering a position if supported by other indicators.";
+            case "Bearish Engulfing":
+                return "Strong selling pressure detected. Avoid buying or consider selling.";
+            case "Evening Star":
+                return "Potential downward reversal detected. Consider reducing exposure or avoiding the stock.";
+            case "Morning Star":
+                return "Potential upward reversal detected. Consider buying if supported by fundamentals.";
+            case "Gravestone Doji":
+                return "Potential bearish reversal detected. Avoid buying or look for confirmation of decline.";
+            case "Dragonfly Doji":
+                return "Potential bullish reversal detected. Consider buying if volume confirms strength.";
+            default:
+                return "No actionable suggestions for the detected pattern.";
+        }
+    }
+
+    // Buffett: Intrinsic Value Calculation
+    private double calculateIntrinsicValue(double eps, double growthRate, double discountRate) {
+        return eps * (1 + growthRate) / discountRate; // Simplified DCF calculation
+    }
+
+    // Buffett: Evaluate Economic Moat
+    private boolean evaluateEconomicMoat(double roe, double roa) {
+        return roe > 0.12 && roa > 0.08; // Example thresholds for ROE and ROA
+    }
+
+    // Munger: Evaluate Circle of Competence
+    private boolean evaluateCircleOfCompetence(String industry) {
+        List<String> competentIndustries = List.of("Tech", "Finance", "Healthcare"); // Example industries of competence
+        return competentIndustries.contains(industry);
+    }
+
+    // Munger: Avoid Mistakes
+    private boolean evaluateMistakes(double debtToEquity, double cashFlow) {
+        return debtToEquity < 0.5 && cashFlow > 0; // Example thresholds for safety
+    }
+
 
     private double calculateMomentum(List<Double> prices) {
         // Rate of change over the last 5 days
@@ -239,6 +334,71 @@ public class YahooFinanceService {
     private long calculateAverageVolume(List<Long> volumes) {
         return volumes.stream().mapToLong(Long::longValue).sum() / volumes.size();
     }
+
+
+    private List<Double> extractOpenPrices(JSONObject jsonResponse) {
+        try {
+            List<Double> openPrices = new ArrayList<>();
+            JSONArray opens = jsonResponse
+                    .getJSONObject("chart")
+                    .getJSONArray("result")
+                    .getJSONObject(0)
+                    .getJSONObject("indicators")
+                    .getJSONArray("quote")
+                    .getJSONObject(0)
+                    .getJSONArray("open");
+
+            for (int i = 0; i < opens.length(); i++) {
+                openPrices.add(opens.getDouble(i));
+            }
+            return openPrices;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to extract opening prices: " + e.getMessage());
+        }
+    }
+
+    private List<Double> extractHighPrices(JSONObject jsonResponse) {
+        try {
+            List<Double> highPrices = new ArrayList<>();
+            JSONArray highs = jsonResponse
+                    .getJSONObject("chart")
+                    .getJSONArray("result")
+                    .getJSONObject(0)
+                    .getJSONObject("indicators")
+                    .getJSONArray("quote")
+                    .getJSONObject(0)
+                    .getJSONArray("high");
+
+            for (int i = 0; i < highs.length(); i++) {
+                highPrices.add(highs.getDouble(i));
+            }
+            return highPrices;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to extract high prices: " + e.getMessage());
+        }
+    }
+
+    private List<Double> extractLowPrices(JSONObject jsonResponse) {
+        try {
+            List<Double> lowPrices = new ArrayList<>();
+            JSONArray lows = jsonResponse
+                    .getJSONObject("chart")
+                    .getJSONArray("result")
+                    .getJSONObject(0)
+                    .getJSONObject("indicators")
+                    .getJSONArray("quote")
+                    .getJSONObject(0)
+                    .getJSONArray("low");
+
+            for (int i = 0; i < lows.length(); i++) {
+                lowPrices.add(lows.getDouble(i));
+            }
+            return lowPrices;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to extract low prices: " + e.getMessage());
+        }
+    }
+
 
 }
 
