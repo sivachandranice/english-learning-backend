@@ -28,8 +28,11 @@ public class StockAnalysisService {
             JSONObject jsonObject = new JSONObject(jsonResponse);
             List<Double> weeklyPrices = aggregateWeeklyData(jsonObject);
 
-            // Analyze trends and calculate optimal buy/sell and decisions
-            Map<String, Object> analysisResults = analyzeTrends(weeklyPrices);
+            // Fetch today's price
+            double todaysPrice = fetchTodaysPrice(symbol);
+
+            // Analyze trends and calculate decisions
+            Map<String, Object> analysisResults = analyzeTrends(weeklyPrices, todaysPrice);
 
             return analysisResults;
         } catch (Exception e) {
@@ -53,6 +56,11 @@ public class StockAnalysisService {
         return response.toString();
     }
 
+    private double fetchTodaysPrice(String stockSymbol) throws Exception {
+        // Simulate fetching today's price (replace with actual API call)
+        return 150.00; // Replace with real-time price fetching logic
+    }
+
     private List<Double> aggregateWeeklyData(JSONObject jsonObject) {
         List<Double> weeklyPrices = new ArrayList<>();
         JSONObject timeSeries = jsonObject.getJSONObject("Time Series (Daily)");
@@ -72,7 +80,7 @@ public class StockAnalysisService {
         return weeklyPrices;
     }
 
-    private Map<String, Object> analyzeTrends(List<Double> weeklyPrices) {
+    private Map<String, Object> analyzeTrends(List<Double> weeklyPrices, double todaysPrice) {
         Map<String, Object> analysisResults = new HashMap<>();
 
         // Calculate Moving Averages
@@ -116,35 +124,45 @@ public class StockAnalysisService {
         analysisResults.put("Max Price", maxPrice);
         analysisResults.put("Min Price", minPrice);
 
+        // Candlestick Pattern Analysis (Expanded)
+        String candlestickPattern = detectCandlestickPattern(weeklyPrices);
+        analysisResults.put("Candlestick Pattern", candlestickPattern);
+
         // Suggest Optimal Buy and Sell Prices
         double optimalBuyPrice = level38; // A conservative level for potential support
         double optimalSellPrice = level61; // A resistance level for profit-taking
         analysisResults.put("Optimal Buy Price", optimalBuyPrice);
         analysisResults.put("Optimal Sell Price", optimalSellPrice);
 
-        // Decision Logic for Short-Term Buy/Sell
-        double latestPrice = weeklyPrices.get(weeklyPrices.size() - 1);
-        if (latestPrice < level38) {
-            analysisResults.put("Short-Term Decision", "Good to buy for short term.");
-        } else if (latestPrice > level61) {
-            analysisResults.put("Short-Term Decision", "Not advisable to buy for short term.");
+        // Today's Price Analysis
+        analysisResults.put("Current Price", todaysPrice);
+        if (todaysPrice < level38) {
+            analysisResults.put("Today Decision", "Advisable to buy: Today's price is below the 38.2% Fibonacci level.");
+        } else if (todaysPrice > level61) {
+            analysisResults.put("Today Decision", "Not advisable to buy: Today's price is above the 61.8% Fibonacci level.");
         } else {
-            analysisResults.put("Short-Term Decision", "Neutral: Wait for clearer signals.");
+            analysisResults.put("Today Decision", "Neutral: Today's price is within the Fibonacci range.");
         }
-
-        // Decision Logic for Long-Term Investment
-        if (shortTermSMA > longTermSMA && rsi < 50) {
-            analysisResults.put("Long-Term Decision", "Good to buy for long term investment.");
-        } else if (shortTermSMA < longTermSMA && rsi > 50) {
-            analysisResults.put("Long-Term Decision", "Not advisable to buy for long term.");
-        } else {
-            analysisResults.put("Long-Term Decision", "Neutral: Monitor for better opportunities.");
-        }
-
-        // Stop-Loss Suggestion
-        analysisResults.put("Stop-Loss Suggestion", "Set at 2% below the buy price or above the sell price.");
 
         return analysisResults;
+    }
+
+    private String detectCandlestickPattern(List<Double> prices) {
+        double latestPrice = prices.get(prices.size() - 1);
+        double previousPrice = prices.get(prices.size() - 2);
+
+        // Expanded patterns
+        if (latestPrice > previousPrice * 1.02 && previousPrice > prices.get(prices.size() - 3)) {
+            return "Bullish Engulfing: Indicates potential upward trend.";
+        } else if (latestPrice < previousPrice * 0.98 && previousPrice < prices.get(prices.size() - 3)) {
+            return "Bearish Engulfing: Indicates potential downward trend.";
+        } else if (latestPrice < previousPrice && latestPrice > prices.get(prices.size() - 3)) {
+            return "Hammer: Indicates potential reversal upward.";
+        } else if (latestPrice > previousPrice && latestPrice < prices.get(prices.size() - 3)) {
+            return "Shooting Star: Indicates potential reversal downward.";
+        } else {
+            return "Doji: Indicates market indecision.";
+        }
     }
 
     private double calculateSMA(List<Double> prices, int period) {
@@ -169,4 +187,3 @@ public class StockAnalysisService {
         return 100 - (100 / (1 + rs));
     }
 }
-
